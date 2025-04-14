@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: flask-container
-          image: naceraoui/web:NEW  # ← Change this!
+          image: naceraoui/web:NEW 
           ports:
             - containerPort: 5000
           env:
