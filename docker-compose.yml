@@ -5,6 +5,8 @@ services:
     build: .
     ports:
       - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://cloud_a1qs_user:ll0FQSg1rOJfXp0h14I427roDm8B242Q@dpg-cvun29i4d50c73bj885g-a.oregon-postgres.render.com/cloud_a1qs
     volumes:
       - .:/app
     depends_on:
