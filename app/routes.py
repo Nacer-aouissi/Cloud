@@ -1,33 +1,46 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session
-from . import db
-from sqlalchemy import text
+# app/routes.py
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from .db import get_db_connection
 
 main = Blueprint('main', __name__)
 
 @main.route('/')
-def login():
-    return render_template('login.html')
+def index():
+    return redirect(url_for('main.login'))
 
-@main.route('/login', methods=['POST'])
-def login_post():
-    username = request.form['username']
-    password = request.form['password']
-    result = db.session.execute(text("SELECT * FROM users WHERE username = :u AND password = :p"),
-                                {'u': username, 'p': password})
-    user = result.fetchone()
-    if user:
-        session['user'] = username
-        return redirect(url_for('main.home'))
-    return "Invalid credentials", 401
+@main.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT * FROM users WHERE username=%s AND password=%s", (username, password))
+        user = cur.fetchone()
+        cur.close()
+        conn.close()
+
+        if user:
+            session['user'] = username
+            return redirect(url_for('main.home'))
+        else:
+            flash('Invalid credentials')
+    return render_template('login.html')
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        db.session.execute(text("INSERT INTO users (username, password) VALUES (:u, :p)"),
-                           {'u': username, 'p': password})
-        db.session.commit()
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, password))
+        conn.commit()
+        cur.close()
+        conn.close()
+
         return redirect(url_for('main.login'))
     return render_template('register.html')
 
@@ -35,7 +48,7 @@ def register():
 def home():
     if 'user' not in session:
         return redirect(url_for('main.login'))
-    return render_template('home.html', username=session['user'])
+    return render_template('home.html', user=session['user'])
 
 @main.route('/logout')
 def logout():
